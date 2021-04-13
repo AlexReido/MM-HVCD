@@ -1,15 +1,15 @@
-import Solution
+from Solution import Solution
 import numpy as np
 
 
-def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int) -> bool:
-    trialSols = []
-    for i in range(max_trials):
-        trialSols.append(Solution())
-    hillvalleytest(evaluator, sol1, sol2, max_trials, trialSols)
+# def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int) -> bool:
+#     trialSols = []
+#     # for i in range(max_trials):
+#     #     trialSols.append(Solution())
+#     hillvalleytest(evaluator, sol1, sol2, max_trials, trialSols)
 
 
-def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int, trial_sols: list(Solution)) -> bool:
+def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int, trial_sols) -> bool:
     """
     The hvt checks if worse solution between them a peak is found therefore in differing clusters
     if in same cluster return true else false
@@ -28,18 +28,18 @@ def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int, t
     val2 = sol2.param
     print(val1)
     print(val2)
-    for k in range((max_trials)):
+    for k in range(max_trials):
         # TODO multi dimension parameters
         testval = val1[0] + ((k + 1.0) / (max_trials + 1.0)) * (val2[0] - val1[0])
-        testvals.append(testval)
-    print(testvals)
-    nevals += len(testvals)
-    for t in testvals:
+        t = Solution([testval])
+        trial_sols.append(t)
+
+        nevals += 1
         # TODO columnwise?
-        f = evaluator([t])
+        t.f = evaluator(t.param)
         # TODO evals ++
         # If worse solution between them a peak is found therefore in differing clusters
-        if f > max(sol1.f, sol2.f):
+        if t.f > max(sol1.f, sol2.f):
             return False
 
     return True
@@ -106,24 +106,37 @@ def hillvalleyclustering(solutions, numberofparameters, evaluator):
             if skip_neighbour:
                 continue
 
+
             force_accept = False
             max_number_of_trial_solutions = 1 + (int(dist[nearest_better] / average_edge_length))
+            new_test_points = []
             print("doing trials : ", max_number_of_trial_solutions)
-            if (i > (0.5 * len(solutions)) and max_number_of_trial_solutions == 1):
+
+            if i > (0.5 * len(solutions)) and max_number_of_trial_solutions == 1:
                 force_accept = True
 
-            if (force_accept or hillvalleytest(evaluator, solutions[i], solutions[nearest_better],
-                                               max_number_of_trial_solutions)):
+            if force_accept or hillvalleytest(evaluator, solutions[i], solutions[nearest_better], max_number_of_trial_solutions, new_test_points):
                 cluster_index[i] = cluster_index[nearest_better]
                 edge_added = True
+
+                for t in new_test_points:
+                    test_points.append(t)
+                    cluster_index_of_test_points.append(cluster_index[nearest_better])
                 break
-                # TODO add test vals to cluster if accepted
             else:
                 does_not_belong_to[j] = cluster_index[nearest_better]
+
+                if len(new_test_points) > 0:
+                    for k in range(len(new_test_points)-1):
+                        test_points_for_curr_sol.append(new_test_points[k])
 
         if not edge_added:
             cluster_index[i] = number_of_clusters
             number_of_clusters += 1
+
+            for t in test_points_for_curr_sol:
+                test_points.append(t)
+                cluster_index_of_test_points.append(cluster_index[i])
 
     # Generate clusters
     # population for each cluster
@@ -140,6 +153,9 @@ def hillvalleyclustering(solutions, numberofparameters, evaluator):
             cluster_active[cluster_index[i]] = False
 
     # TODO test points here
+    for i in range(len(test_points)):
+        candidate_clusters[cluster_index_of_test_points[i]].append(test_points[i])
+
     clusters = []
     for i in range(len(candidate_clusters)):
         if (cluster_active[i]):

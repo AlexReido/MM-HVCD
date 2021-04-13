@@ -3,6 +3,7 @@
 # scipy.spatial.distance.
 import numpy as np
 
+
 class Solution:
     elite: bool
     param: list
