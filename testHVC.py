@@ -9,7 +9,7 @@ from Solution import Solution
 def evaluate(x):
     """:returns this function creates a multi modal test problem"""
     # five is the standard
-    NUMBER_OF_NICHES = 2
+    NUMBER_OF_NICHES = 5
     assert (x[0] >= 0) and (x[0] <= 1)
     return 1.1 - math.exp(-2 * x[0]) * math.sin(NUMBER_OF_NICHES * x[0] * math.pi) ** 2
 

@@ -118,8 +118,8 @@ if __name__ == '__main__':
     number_of_runs = 31
     max_fevals = 1000000
     problems_list = [10, 12, 13, 14, 15, 16]
-    problem_index = str(10)
-    PROBLEM_NAME = "TwoOnOne"
+    problem_index = str(11)
+    PROBLEM_NAME = "TwoOnOne2"
     problem_variables = [2, 2, 2, 2, 2, 2]
     number_of_parameters = str(2)
     lopt = 0
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     igd_reps = []
     igdx_reps = []
     for rep in range(number_of_runs):
-        write_directory = "./res/TwoOnOne/TwoOnOne" + str(rep)
+        write_directory = "./res/TwoOnOne2/TwoOnOne2" + str(rep)
         # RUNNING STEFS from here
         processes = set()
         #

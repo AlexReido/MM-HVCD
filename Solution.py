@@ -3,6 +3,11 @@
 # scipy.spatial.distance.
 import numpy as np
 
+def popMean(pop):
+    mean = 0
+    for sol in pop:
+        mean += sol.param
+    return mean/len(pop)
 
 class Solution:
     elite: bool
