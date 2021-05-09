@@ -40,6 +40,7 @@ def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int, t
         # TODO evals ++
         # If worse solution between them a peak is found therefore in differing clusters
         if t.f > max(sol1.f, sol2.f):
+            # TODO if greater than any other between them?
             return False
 
     return True
@@ -52,31 +53,35 @@ class Edge:
         self.length = length
 
 
-def hillvalleyclustering(solutions, numberofparameters, evaluator):
-    parameter_upper_limits = [1]  # TODO add
-    parameter_lower_limits = [0]
+def add_to_clusters():
+    pass
+
+
+def hillvalleyclustering(population, numberofparameters, evaluator, parameter_upper_limits = [1], parameter_lower_limits = [0]):
+    # parameter_upper_limits = [1]  # TODO add
+    # parameter_lower_limits = [0]
     scaled_search_volume = 1
     for p in range(numberofparameters):
         scaled_search_volume *= pow(parameter_upper_limits[p] - parameter_lower_limits[p], 1 / numberofparameters)
-    average_edge_length = scaled_search_volume * pow(len(solutions), -1.0 / numberofparameters)
+    average_edge_length = scaled_search_volume * pow(population.size, -1.0 / numberofparameters)
 
     test_points = []
     cluster_index_of_test_points = []
     clustering_max_number_of_neighbours = numberofparameters + 1
-    cluster_index = [-1] * len(solutions)
+    cluster_index = [-1] * population.size
     cluster_index[0] = 0
     number_of_clusters = 1
     # Generate nearest better tree
-    solutions = sorted(solutions, key=lambda x: x.f)
+    population.order()
     edges = []
-    for i in range(len(solutions)):
+    for i in range(population.size):
         dist = np.zeros(i)
         nearest_dist = 1e308
         furthest_dist = 0
         nearest_better = 0
         furthest_better = 0
         for j in range(i - 1):
-            dist[j] = solutions[i].param_distance(solutions[j])
+            dist[j] = population.solutions[i].param_distance(population.solutions[j])
             if dist[j] < nearest_dist:
                 nearest_dist = dist[j]
                 nearest_better = j
@@ -112,10 +117,10 @@ def hillvalleyclustering(solutions, numberofparameters, evaluator):
             new_test_points = []
             print("doing trials : ", max_number_of_trial_solutions)
 
-            if i > (0.5 * len(solutions)) and max_number_of_trial_solutions == 1:
+            if i > (0.5 * population.size) and max_number_of_trial_solutions == 1:
                 force_accept = True
 
-            if force_accept or hillvalleytest(evaluator, solutions[i], solutions[nearest_better], max_number_of_trial_solutions, new_test_points):
+            if force_accept or hillvalleytest(evaluator, population.solutions[i], population.solutions[nearest_better], max_number_of_trial_solutions, new_test_points):
                 cluster_index[i] = cluster_index[nearest_better]
                 edge_added = True
 
@@ -142,14 +147,14 @@ def hillvalleyclustering(solutions, numberofparameters, evaluator):
     # population for each cluster
     candidate_clusters = [[] for i in range(number_of_clusters)]
     cluster_active = [True] * number_of_clusters
-    print("solutions: ", solutions)
+    print("solutions: ", population.solutions)
     print("cluster index: ", cluster_index)
-    print("candidate clusters: ", candidate_clusters)
-    for i in range(len(cluster_index)):
-        candidate_clusters[cluster_index[i]].append(solutions[i])
-        solutions[i].cluster_number = int(cluster_index[i])
 
-        if len(candidate_clusters[cluster_index[i]]) == 1 and solutions[i].elite:
+    for i in range(len(cluster_index)):
+        candidate_clusters[cluster_index[i]].append(population.solutions[i])
+        population.solutions[i].cluster_number = int(cluster_index[i])
+
+        if len(candidate_clusters[cluster_index[i]]) == 1 and population.solutions[i].elite:
             cluster_active[cluster_index[i]] = False
 
     # TODO test points here
@@ -160,4 +165,6 @@ def hillvalleyclustering(solutions, numberofparameters, evaluator):
     for i in range(len(candidate_clusters)):
         if (cluster_active[i]):
             clusters.append(candidate_clusters[i])
+    clusters = [x for x in clusters if x != []]
+    print("final clusters: ", clusters)
     return clusters

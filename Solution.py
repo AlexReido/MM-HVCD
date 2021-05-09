@@ -3,15 +3,11 @@
 # scipy.spatial.distance.
 import numpy as np
 
-def popMean(pop):
-    mean = 0
-    for sol in pop:
-        mean += sol.param
-    return mean/len(pop)
+
 
 class Solution:
     elite: bool
-    param: list
+    param: np.array
     cluster_number: int
     f: float
     penalty: float
@@ -20,7 +16,7 @@ class Solution:
         self.elite = False
 
     def __init__(self, params):
-        self.param = params
+        self.param = np.asarray(params)
         self.elite = False
 
     def param_distance(self, other_sol):

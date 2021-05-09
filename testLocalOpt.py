@@ -1,5 +1,5 @@
+from LocalOpt import LocalOptimizer
 import random
-
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -38,18 +38,8 @@ def test_hillvalleytest():
     plt.title("Testing the hillvalleytest")
     plt.show()
 
-def test_hvc():
-    sols = []
-    for i in range(30):
-        s = Solution([random.random()])
-        s.f = evaluate(s.param)
-        sols.append(s)
-    pop = Population(sols)
-    clusters = HVC.hillvalleyclustering(pop, 1, evaluate)
+def plotLocalPops(clusters):
     plotBasic()
-    cluster_indexes =[]
-    x = []
-    f = []
     for i, c in enumerate(clusters):
         # print("Cluster " + str(i)+ ":")
         cluster_indexes = []
@@ -62,16 +52,27 @@ def test_hvc():
 
         plt.scatter(x,f, cmap=plt.get_cmap("tab20"), label="Cluster: " +str(i))
 
-    plt.title("Hill valley clustering")
-    # plt.legend()
+    plt.show()
+
+def test_localOpt():
+    plotBasic()
+    sols = []
+    for i in range(30):
+        s = Solution([random.random()])
+        s.f = evaluate(s.param)
+        sols.append(s)
+    pop = Population(sols)
+    clusters = HVC.hillvalleyclustering(pop, 1, evaluate)
+    for c in clusters:
+        local_opt = LocalOptimizer(Population(c), evaluate)
+        res = local_opt.run_opt()
+        print(res)
+        plt.scatter(res[0][0], res[1], cmap=plt.get_cmap("tab20"), label="Cluster: " + str(i))
+    # plt.title("Hill valley clustering")
+    # # plt.legend()
     plt.show()
 
 
 
 if __name__ == "__main__":
-    # plotBasic()
-    # plt.show()
-    # Testing
-    # test_hillvalleytest()
-
-    test_hvc()
+    test_localOpt()
