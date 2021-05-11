@@ -53,7 +53,7 @@ def MOEADHVC(problem):
     termination = 1000
     while fevals < termination:
         for i, vector in enumerate(vectors):
-            clusters = hillvalleyclustering(P[i], problem.n_var, evaluators[i], prob.xu, prob.xl)
+            clusters = HVC(P[i], problem.n_var, evaluators[i], prob.xu, prob.xl)
             for c in clusters:
                 E[i].append(Archive(c))
                 local_opt = LocalOptimizer(Population(c), evaluators[i])

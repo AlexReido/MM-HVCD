@@ -74,4 +74,4 @@ if __name__ == "__main__":
     # Testing
     # test_hillvalleytest()
 
-    test_hvc()
+    test_hvc(= [1], parameter_lower_limits = [0])
