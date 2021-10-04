@@ -17,7 +17,7 @@ import random
 
 from Population import Population
 import numpy as np
-from HVC import hillvalleyclustering, HVC
+from HVC import HVC
 from LocalOpt import LocalOptimizer
 from pymoo.util.nds.non_dominated_sorting import find_non_dominated
 from Archive import Archive
@@ -152,7 +152,8 @@ def MOEADHVC(problem):
         HVCS.append(hvc)
     current_best_f = 1e28
     while fevals < termination:
-        print("another gen")
+        print("gen", gen)
+        gen += 1
         for i, vector in enumerate(vectors):
             # print(HVCS[i].population.solutions)
             pymoo = pymooPop.new()
