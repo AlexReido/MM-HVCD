@@ -12,7 +12,18 @@ class Population():
             s.f = y[i]
 
     def order(self):
+        """
+        Sort solutions based on fitness
+        :return:
+        """
+
         self.solutions = sorted(self.solutions, key=lambda x: x.f)
+
+    def combine(self, other_solutions, evaluator):
+        self.solutions = self.solutions + other_solutions
+        self.eval(evaluator)
+        self.order()
+        return [self.solutions.index(sol) for sol in other_solutions]
 
     def truncation_percentage(self, truncation_percentage):
         """Select the truncation_percentage*population_size best solutions"""
@@ -31,7 +42,6 @@ class Population():
 
     def improvement(self, sol):
         """ if the soltution sol is better than the best in this population"""
-        # TODO works on vector?
         if self.solutions[0].f < sol.f:
             return True
         else:

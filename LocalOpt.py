@@ -16,8 +16,8 @@ class LocalOptimizer():
 
     def run_opt(self):
         res = minimize(self.evaluator, self.mean, method='Nelder-Mead', tol=1e-6, options={"maxfev":10})
-        # print("Fevals = ", res.nfev)
-        print("fval= ", res.fun)
+        # print("Fevals = ", res.nfev) # num function evaluations
+        # print("fval= ", res.fun)
         return res.x, res.fun
 
     def sample_new_population(self):

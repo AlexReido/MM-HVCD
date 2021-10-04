@@ -38,16 +38,16 @@ def test_hillvalleytest():
     plt.title("Testing the hillvalleytest")
     plt.show()
 
-def test_hvc():
+def test_hvc(parameter_upper_limits, parameter_lower_limits):
     sols = []
     for i in range(30):
         s = Solution([random.random()])
         s.f = evaluate(s.param)
         sols.append(s)
     pop = Population(sols)
-    clusters = HVC.hillvalleyclustering(pop, 1, evaluate)
+    clusters = HVC.hillvalleyclustering(pop, 1, evaluate, [1], [0])
     plotBasic()
-    cluster_indexes =[]
+    cluster_indexes = []
     x = []
     f = []
     for i, c in enumerate(clusters):
@@ -62,8 +62,10 @@ def test_hvc():
 
         plt.scatter(x,f, cmap=plt.get_cmap("tab20"), label="Cluster: " +str(i))
 
-    plt.title("Hill valley clustering")
+    plt.title("Testing Hill Valley Clustering")
     # plt.legend()
+    plt.xlabel("$x$")
+    plt.ylabel("$f(x)$")
     plt.show()
 
 
@@ -74,4 +76,4 @@ if __name__ == "__main__":
     # Testing
     # test_hillvalleytest()
 
-    test_hvc(= [1], parameter_lower_limits = [0])
+    test_hvc(parameter_upper_limits = [1], parameter_lower_limits = [0])

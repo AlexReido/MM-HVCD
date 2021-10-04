@@ -62,14 +62,16 @@ def test_localOpt():
         s.f = evaluate(s.param)
         sols.append(s)
     pop = Population(sols)
-    clusters = HVC.hillvalleyclustering(pop, 1, evaluate)
+    clusters = HVC.hillvalleyclustering(pop, 1, evaluate, [1], [0])
     for c in clusters:
         local_opt = LocalOptimizer(Population(c), evaluate)
         res = local_opt.run_opt()
         print(res)
         plt.scatter(res[0][0], res[1], cmap=plt.get_cmap("tab20"), label="Cluster: " + str(i))
-    # plt.title("Hill valley clustering")
-    # # plt.legend()
+    plt.title("Testing the local optimiser")
+    # plt.legend()
+    plt.xlabel("$x$")
+    plt.ylabel("$f(x)$")
     plt.show()
 
 
