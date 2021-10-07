@@ -21,6 +21,11 @@ class Archive():
         self.archive = [sol for sol in solutions if sol.elite]
 
     def updateArchive(self, solution):
+        """
+        TODO add solution to cluster
+        :param solution:
+        :return:
+        """
         remove = []
         insert = {}
         elite = False
