@@ -57,7 +57,7 @@ class Edge:
 
 class HVC():
 
-    def __init__(self, numberofparameters, evaluator, parameter_upper_limits, parameter_lower_limits):
+    def __init__(self, numberofparameters, evaluator, parameter_upper_limits, parameter_lower_limits, weight_vector):
         self.parameter_upper_limits = parameter_upper_limits
         self.parameter_lower_limits = parameter_lower_limits
         self.number_of_parameters = numberofparameters
@@ -65,7 +65,7 @@ class HVC():
         self.clusters = []
         self.archives = []
         self.current_best_f = 1e28
-        # TODO store vector weighting here
+        self.vector = weight_vector
 
     def init_clusters(self, population):
         scaled_search_volume = 1

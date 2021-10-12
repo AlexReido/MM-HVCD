@@ -1,6 +1,5 @@
 # Imports ===============================================================================================
 
-# from pymoo.algorithms.moead import MOEAD
 from pymoo.factory import get_problem, get_visualization, get_reference_directions, get_performance_indicator
 # from pymoo.operators.mutation.polynomial_mutation import PolynomialMutation
 from pymoo.optimize import minimize
@@ -175,14 +174,14 @@ def MOEADHVC(problem):
     HVCS = []
     gen = 0
     for i, vector in enumerate(vectors):
-        hvc = HVC(problem.n_var, evaluators[i], problem.xu, problem.xl)
+        hvc = HVC(problem.n_var, evaluators[i], problem.xu, problem.xl, vector)
         hvc.init_clusters(P[i])
         HVCS.append(hvc)
 
     while fevals < termination:
         print("gen", gen)
         gen += 1
-        for i, vector in enumerate(vectors):
+        for i, hvc in enumerate(HVCS):
             print("i= ", i)
             # print(HVCS[i].population.solutions)
             if len(HVCS[i].clusters) != len(HVCS[i].archives):
@@ -190,8 +189,8 @@ def MOEADHVC(problem):
                 print("OPT1 len of clusters = ", len(HVCS[i].clusters))
                 print("OPT1 len of archive = ", len(HVCS[i].archives))
             pymoo = pymooPop.new()
-            S1 = binary_tournament(HVCS[i].population.solutions, 5)
-            S2 = binary_tournament(HVCS[i].population.solutions, 5)
+            S1 = binary_tournament(hvc.population.solutions, 5)
+            S2 = binary_tournament(hvc.population.solutions, 5)
             S1 = np.asarray([s.param for s in S1])
             S2 = np.asarray([s.param for s in S2])
             # print(S)
@@ -203,15 +202,15 @@ def MOEADHVC(problem):
             new = Population([Solution(params=p) for p in new])
             if len(HVCS[i].clusters) != len(HVCS[i].archives):
                 print("OPT2 len not equal")
-                print("OPT2 len of clusters = ", len(HVCS[i].clusters))
-                print("OPT2 len of archive = ", len(HVCS[i].archives))
-            HVCS[i].add_to_clusters(new)
+                print("OPT2 len of clusters = ", len(hvc.clusters))
+                print("OPT2 len of archive = ", len(hvc.archives))
+            hvc.add_to_clusters(new)
 
-            if len(HVCS[i].clusters) != len(HVCS[i].archives):
+            if len(HVCS[i].clusters) != len(hvc.archives):
                 print("OPT3 len not equal")
-                print("OPT3 len of clusters = ", len(HVCS[i].clusters))
-                print("OPT3 len of archive = ", len(HVCS[i].archives))
-            for j, c in enumerate(HVCS[i].clusters):
+                print("OPT3 len of clusters = ", len(hvc.clusters))
+                print("OPT3 len of archive = ", len(hvc.archives))
+            for j, c in enumerate(hvc.clusters):
                 optimiseCluster(c, evaluators[i], HVCS, i, j)
 
             # for sol in HVCS[i].population.solutions:
@@ -229,12 +228,12 @@ def MOEADHVC(problem):
         #                 raise Exception("BAD CLUSTER NUMBER")
         # final_pop = []
 
-        for i, vector in enumerate(vectors):
-            for j, a in enumerate(HVCS[i].archives):
-                if a.archive[0].f < HVCS[i].current_best_f:
-                    HVCS[i].current_best_f = a.archive[0].f
+        for i, hvc in enumerate(HVCS):
+            for j, a in enumerate(hvc.archives):
+                if a.archive[0].f < hvc.current_best_f:
+                    hvc.current_best_f = a.archive[0].f
                     # final_pop = final_pop + a.archive # TODO below
-                elif a.archive[0].f > np.any(HVCS[i].current_best_f + ((0.2) * (problem.xu - problem.xl))):
+                elif a.archive[0].f > np.any(hvc.current_best_f + ((0.2) * (problem.xu - problem.xl))):
                     # HVCS[i].clusters.pop(j)
                     # HVCS[i].archives.pop(j)  # [j] = None
                     pass
@@ -252,8 +251,8 @@ def MOEADHVC(problem):
                 #         raise Exception("BAD CLUSTER NUMBER")
 
     final_pop = []
-    for i, vector in enumerate(vectors):
-        for j, a in enumerate(HVCS[i].archives):
+    for i, hvc in enumerate(HVCS):
+        for j, a in enumerate(hvc.archives):
             final_pop = final_pop + a.archive
     for sol in final_pop:
         if sol.cluster_number == -1:
