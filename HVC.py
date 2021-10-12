@@ -3,6 +3,7 @@ from Solution import Solution
 import numpy as np
 from Population import Population
 
+
 # def hillvalleytest(evaluator, sol1: Solution, sol2: Solution, max_trials: int) -> bool:
 # trialSols = []
 # # for i in range(max_trials):
@@ -54,9 +55,6 @@ class Edge:
         self.length = length
 
 
-
-
-
 class HVC():
 
     def __init__(self, numberofparameters, evaluator, parameter_upper_limits, parameter_lower_limits):
@@ -66,6 +64,8 @@ class HVC():
         self.evaluator = evaluator
         self.clusters = []
         self.archives = []
+        self.current_best_f = 1e28
+        # TODO store vector weighting here
 
     def init_clusters(self, population):
         scaled_search_volume = 1
@@ -133,7 +133,8 @@ class HVC():
                     force_accept = True
 
                 if force_accept or hillvalleytest(self.evaluator, self.population.solutions[i],
-                                                  self.population.solutions[nearest_better], max_number_of_trial_solutions,
+                                                  self.population.solutions[nearest_better],
+                                                  max_number_of_trial_solutions,
                                                   new_test_points):
                     self.cluster_index[i] = self.cluster_index[nearest_better]
                     edge_added = True
@@ -156,6 +157,7 @@ class HVC():
                 for t in test_points_for_curr_sol:
                     test_points.append(t)
                     cluster_index_of_test_points.append(self.cluster_index[i])
+            # print("Assigned to cluster ", self.cluster_index[i])
 
         # Generate clusters
         # population for each cluster
@@ -184,9 +186,26 @@ class HVC():
             for sol in c:
                 sol.cluster_number = i
         # print("final clusters: ", clusters)
+
         self.clusters = clusters
         self.archives = [Archive(cluster, self.evaluator) for cluster in clusters]
+
+        # debugging
+        # for a in self.archives:
+        #     print("HVC 1")
+        #     for sol in a.archive:
+        #
+        #         print(sol.cluster_number, end=" ")
+        #         if sol.cluster_number == -1:
+        #             print("JUST instantiated archives")
+        #             print(sol.cluster_number)
+        #             raise Exception("BAD CLUSTER NUMBER")
+
+        remove_indexes = []
+
         for i, sol in enumerate(self.population.solutions):
+            if self.population.solutions[i].cluster_number == -1:
+                remove_indexes.append(i)
             # print(self.population.solutions[i].cluster_number)
             if self.population.solutions[i].cluster_number is None:
                 raise Exception()
@@ -209,11 +228,11 @@ class HVC():
         clustering_max_number_of_neighbours = self.number_of_parameters + 1
         new_cluster_index = [-1] * newPop.size
         old_cluster_count = self.number_of_clusters
-        old_archives = self.archives.copy()
+        # old_archives = self.archives.copy()
         # new_cluster_index[0] = 0
 
         # Generate nearest better tree
-        # combine new pop by looping thoru worse solutions with i as each new pop when placed in with old pop
+        # combine new pop by looping through worse solutions with i as each new pop when placed in with old pop
 
         edges = []
         for index in range(newPop.size):
@@ -223,7 +242,7 @@ class HVC():
             furthest_dist = 0
             nearest_better = 0
             furthest_better = 0
-            for j in range(i-1):
+            for j in range(i - 1):
                 dist[j] = self.population.solutions[i].param_distance(self.population.solutions[j])
                 if dist[j] < nearest_dist:
                     nearest_dist = dist[j]
@@ -264,9 +283,11 @@ class HVC():
                     force_accept = True
 
                 if force_accept or hillvalleytest(self.evaluator, self.population.solutions[i],
-                                                  self.population.solutions[nearest_better], max_number_of_trial_solutions,
+                                                  self.population.solutions[nearest_better],
+                                                  max_number_of_trial_solutions,
                                                   new_test_points):
-                    self.population.solutions[i].cluster_number = self.population.solutions[nearest_better].cluster_number
+                    self.population.solutions[i].cluster_number = self.population.solutions[
+                        nearest_better].cluster_number
                     edge_added = True
 
                     for t in new_test_points:
@@ -283,11 +304,14 @@ class HVC():
             if not edge_added:
                 self.population.solutions[i].cluster_number = self.number_of_clusters
                 self.number_of_clusters += 1
+                print("")
 
                 for t in test_points_for_curr_sol:
                     test_points.append(t)
                     cluster_index_of_test_points.append(self.population.solutions[i].cluster_number)
 
+            # print("Assigned to cluster ", self.population.solutions[i].cluster_number)
+        # print(cluster_index_of_test_points)
         # Generate clusters
         # population for each cluster
         candidate_clusters = [[] for i in range(self.number_of_clusters)]
@@ -295,11 +319,12 @@ class HVC():
         for i, sol in enumerate(self.population.solutions):
             # print(self.population.solutions[i].cluster_number)
             candidate_clusters[self.population.solutions[i].cluster_number].append(self.population.solutions[i])
-
+        # print("candidate clusters: ", candidate_clusters)
         # print("solutions: ", self.population.solutions)
         # print("cluster index: ", new_cluster_index)
         # self.cluster_index = self.cluster_index + new_cluster_index
         # for i in range(len(self.cluster_index)):
+        #  completely wrong??
         #     candidate_clusters[new_cluster_index].append(self.population.solutions[i])
         #     self.population.solutions[i].cluster_number = int(self.cluster_index[i])
         #
@@ -308,40 +333,49 @@ class HVC():
         #         cluster_active[self.cluster_index[i]] = False
 
         # TODO test points here
-        last_index =len(self.population.solutions)
+        last_index = len(self.population.solutions)
         num_clusters = 1
         for i in range(len(test_points)):
             candidate_clusters[cluster_index_of_test_points[i]].append(test_points[i])
             test_points[i].cluster_number = cluster_index_of_test_points[i]
             self.population.solutions.append(test_points[i])
-            if test_points[i].cluster_number > num_clusters:
-                num_clusters = test_points[i].cluster_number
+            # if test_points[i].cluster_number > num_clusters:
+            #     num_clusters = test_points[i].cluster_number
             # if test_points[i].cluster_number >= len(old_archives):
             #     self.archives.append(Archive([test_points[i]], self.evaluator))
             #     old_cluster_count += 1
             # else:
             #     self.archives[test_points[i].cluster_number].updateArchive(test_points[i])
 
-
         clusters = []
         for i in range(len(candidate_clusters)):
             if cluster_active[i]:
                 clusters.append(candidate_clusters[i])
+                # print("dandidate i: ", i, " == ", candidate_clusters[i])
         clusters = [x for x in clusters if x != []]
         # print("final clusters: ", clusters)
         self.clusters = clusters
         newSols = [self.population.solutions[index] for index in newPop_indexes]
-        for sol in newSols:
+        # remove_indexes = []
+        for i, sol in enumerate(newSols):
+            # if sol.cluster_number == -1:
+            # remove_indexes.append(i)
             if sol.cluster_number >= num_clusters:
                 num_clusters = sol.cluster_number
         # print("num clusteres ", num_clusters)
-        while len(self.archives) < num_clusters+1:
+        # newSols = [sol for i, sol in enumerate(newSols) if sol not in newSols]
+
+        if len(self.clusters) != len(self.archives):
+            print("HVC 0 len not equal")
+
+        while len(self.archives) < num_clusters + 1:
             self.archives.append(None)
 
+        if len(self.clusters) != len(self.archives):
+            print("HVC 1 len not equal")
 
         # print("old count", old_cluster_count)
         # print(self.archives)
-
 
         for i, sol in enumerate(test_points):
             # print("c num ", sol.cluster_number)
@@ -349,22 +383,46 @@ class HVC():
                 self.archives[sol.cluster_number] = Archive([sol], self.evaluator)
             else:
                 self.archives[sol.cluster_number].updateArchive(sol)
-
+        if len(self.clusters) != len(self.archives):
+            print("HVC 3 len not equal")
         for i, sol in enumerate(newSols):
-            # print("new num ", sol.cluster_number)
+            # print("new c ", sol.cluster_number)
             if self.archives[sol.cluster_number] is None:
                 self.archives[sol.cluster_number] = Archive([sol], self.evaluator)
             else:
                 self.archives[sol.cluster_number].updateArchive(sol)
+        # if len(self.clusters) != len(self.archives):
+        #     print("HVC 4 len not equal")
         self.archives = [a for a in self.archives if a is not None]
+        self.clusters = [a for a in self.clusters if a is not None]
+        # debugging
+        # for a in self.archives:
+        #     print("HVC 2")
+        #     for sol in a.archive:
+        #         print(sol.cluster_number, end=" ")
+        #         if sol.cluster_number == -1:
+        #             print(sol.cluster_number)
+        #             print("HVC 2")
+        #             raise Exception("BAD CLUSTER NUMBER")
         # print(len(clusters))
         # print(clusters)
         # print(self.archives)
 
-            # if sol.cluster_number >= len(old_archives):
-            #     self.archives.append(Archive([sol], self.evaluator))
-            #     old_cluster_count += 1
-
-            # print("old arcive", old_archives)
-            # self.archives[sol.cluster_number].updateArchive(sol)
+        # if sol.cluster_number >= len(old_archives):
+        #     self.archives.append(Archive([sol], self.evaluator))
+        #     old_cluster_count += 1
+        if len(self.clusters) != len(self.archives):
+            print("HVC 5 len not equal")
+            print("len of clusters = ", len(self.clusters))
+            for c in self.clusters:
+                print(c)
+                print(c[-1].cluster_number)
+            print("len of archive = ", len(self.archives))
+            for a in self.archives:
+                print(a.archive)
+        # print("old arcive", old_archives)
+        # self.archives[sol.cluster_number].updateArchive(sol)
+        # print("clusters == ", clusters)
+        # cluster = [s.cluster_number for s in clusters]
+        # print("clusters == ", cluster)
         return clusters

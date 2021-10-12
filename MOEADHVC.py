@@ -33,6 +33,7 @@ class IGDX(DistanceIndicator):
     def __init__(self, pf, **kwargs):
         super().__init__(pf, euclidean_distance, 1, **kwargs)
 
+
 def calculate_indicators(pf, ps, outvalArr, invalArr):
     igd = get_performance_indicator("igd", pf)
     igd_val = igd.do(outvalArr)
@@ -46,6 +47,7 @@ def calculate_indicators(pf, ps, outvalArr, invalArr):
     hv_val = hv.do(outvalArr)
     # print("Hypervolume", hv_val)
     return igd_val, hv_val, igdx_val
+
 
 class Evaluator():
     # global fevals
@@ -66,6 +68,8 @@ class Evaluator():
 
 # simple binary tournament for a single-objective algorithm
 def binary_tournament(pop, n_selected):
+    # TODO protect against population of 1
+    np.random.seed(0)
     n_competitors = 2
 
     # the result this function returns
@@ -83,10 +87,13 @@ def binary_tournament(pop, n_selected):
 
 
 def crossover(a, b):
-    x  = random.random()
-    return (x * (b-a)) + a
+    np.random.seed(0)
+    x = random.random()
+    return (x * (b - a)) + a
+
 
 def mutation(S, prob_xu, prob_xl):
+    np.random.seed(0)
     newS = np.zeros(S.shape)
     for i, s in enumerate(S):
         newS[i] = np.random.normal(s, (0.05 * (prob_xu - prob_xl)))
@@ -96,8 +103,6 @@ def mutation(S, prob_xu, prob_xl):
             X += prob.xl
             newS[i] = X
     return newS
-
-
 
 
 def initialisePopulation(vectors, problem, pop_size=100):
@@ -157,12 +162,13 @@ def optimiseCluster(c, evaluator, Clusters, i, j):
 
 
 def MOEADHVC(problem):
+    np.random.seed(0)
     # Get weight vectors
     vectors = get_reference_directions("das-dennis", problem.n_obj, n_partitions=12)
     # crossover = SimulatedBinaryCrossover(eta=20)
     # mutation = PolynomialMutation(prob=None, eta=20)
 
-    pop_size = 100
+    pop_size = 10
     P, evaluators, E = initialisePopulation(vectors, problem, pop_size)
     # fevals += pop_size
     termination = 500000
@@ -208,11 +214,9 @@ def MOEADHVC(problem):
             for j, c in enumerate(HVCS[i].clusters):
                 optimiseCluster(c, evaluators[i], HVCS, i, j)
 
-
             # for sol in HVCS[i].population.solutions:
             #     if sol.cluster_number == -1:
             #         raise Exception("BAD CLUSTER NUMBER")
-
 
         # debugging
         # for i, vector in enumerate(vectors):
@@ -225,20 +229,16 @@ def MOEADHVC(problem):
         #                 raise Exception("BAD CLUSTER NUMBER")
         # final_pop = []
 
-
         for i, vector in enumerate(vectors):
-            current_best_f = 1e28
             for j, a in enumerate(HVCS[i].archives):
-                if a.archive[0].f < current_best_f:
-                    current_best_f = a.archive[0].f
+                if a.archive[0].f < HVCS[i].current_best_f:
+                    HVCS[i].current_best_f = a.archive[0].f
                     # final_pop = final_pop + a.archive # TODO below
-                elif a.archive[0].f > np.any(current_best_f + ((0.2) *(problem.xu - problem.xl))):
-                    HVCS[i].clusters.pop(j)
-                    HVCS[i].archives.pop(j) #[j] = None
-                    # pass
+                elif a.archive[0].f > np.any(HVCS[i].current_best_f + ((0.2) * (problem.xu - problem.xl))):
+                    # HVCS[i].clusters.pop(j)
+                    # HVCS[i].archives.pop(j)  # [j] = None
+                    pass
 
-                    print("DEL len of clusters = ", len(HVCS[i].clusters))
-                    print("DEL len of archive = ", len(HVCS[i].archives))
                 # else: # TODO overtime analysis
                 #     final_pop = final_pop + a.archive
 
@@ -250,7 +250,6 @@ def MOEADHVC(problem):
                 #     if sol.cluster_number == -1:
                 #         print(sol.cluster_number)
                 #         raise Exception("BAD CLUSTER NUMBER")
-
 
     final_pop = []
     for i, vector in enumerate(vectors):
@@ -277,6 +276,7 @@ def MOEADHVC(problem):
 # #local_optimizers[i]->average_fitness_history.push_back(local_optimizers[i]->pop->average_fitness())
 
 if __name__ == "__main__":
+    np.random.seed(0)
     global fevals
     fevals = 0
     prob = SYMPART()
@@ -319,7 +319,5 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
-
     print(prob.xu)
     print(prob.xl)
-
