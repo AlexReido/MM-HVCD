@@ -93,7 +93,7 @@ class HVC():
             furthest_better = 0
             # loop through all solutions before solution i therefore solution j is always better than i
             for j in range(i - 1):
-                # TODO could calculte all distances in matrix before
+                # TODO could calculate all distances in matrix before
                 dist[j] = self.population.solutions[i].param_distance(self.population.solutions[j])
                 if dist[j] < nearest_dist:
                     nearest_dist = dist[j]
@@ -304,7 +304,8 @@ class HVC():
             if not edge_added:
                 self.population.solutions[i].cluster_number = self.number_of_clusters
                 self.number_of_clusters += 1
-                print("")
+                # print("new cluster")
+                # print("Number_of_clusters = ", self.number_of_clusters)
 
                 for t in test_points_for_curr_sol:
                     test_points.append(t)
@@ -365,14 +366,14 @@ class HVC():
         # print("num clusteres ", num_clusters)
         # newSols = [sol for i, sol in enumerate(newSols) if sol not in newSols]
 
-        if len(self.clusters) != len(self.archives):
-            print("HVC 0 len not equal")
+        # if len(self.clusters) != len(self.archives):
+        #     print("HVC 0 len not equal")
 
         while len(self.archives) < num_clusters + 1:
             self.archives.append(None)
 
-        if len(self.clusters) != len(self.archives):
-            print("HVC 1 len not equal")
+        # if len(self.clusters) != len(self.archives):
+        #     print("HVC 1 len not equal")
 
         # print("old count", old_cluster_count)
         # print(self.archives)
@@ -383,8 +384,8 @@ class HVC():
                 self.archives[sol.cluster_number] = Archive([sol], self.evaluator)
             else:
                 self.archives[sol.cluster_number].updateArchive(sol)
-        if len(self.clusters) != len(self.archives):
-            print("HVC 3 len not equal")
+        # if len(self.clusters) != len(self.archives):
+        #     print("HVC 3 len not equal")
         for i, sol in enumerate(newSols):
             # print("new c ", sol.cluster_number)
             if self.archives[sol.cluster_number] is None:
@@ -411,15 +412,15 @@ class HVC():
         # if sol.cluster_number >= len(old_archives):
         #     self.archives.append(Archive([sol], self.evaluator))
         #     old_cluster_count += 1
-        if len(self.clusters) != len(self.archives):
-            print("HVC 5 len not equal")
-            print("len of clusters = ", len(self.clusters))
-            for c in self.clusters:
-                print(c)
-                print(c[-1].cluster_number)
-            print("len of archive = ", len(self.archives))
-            for a in self.archives:
-                print(a.archive)
+        # if len(self.clusters) != len(self.archives):
+        #     print("HVC 5 len not equal")
+        #     print("len of clusters = ", len(self.clusters))
+        #     for c in self.clusters:
+        #         print(c)
+        #         print(c[-1].cluster_number)
+        #     print("len of archive = ", len(self.archives))
+        #     for a in self.archives:
+        #         print(a.archive)
         # print("old arcive", old_archives)
         # self.archives[sol.cluster_number].updateArchive(sol)
         # print("clusters == ", clusters)
