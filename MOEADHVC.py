@@ -40,9 +40,9 @@ def calculate_indicators(pf, ps, outvalArr, invalArr):
     igdx = IGDX(ps)
     igdx_val = igdx.do(invalArr)
     # print("IGDX", igdx_val)
-    outvalArr = outvalArr[:5]
+    # outvalArr = outvalArr[:5]
     hv = get_performance_indicator("hv", ref_point=np.array([10, 10]))
-    print("out vals ===", outvalArr)
+    # print("out vals ===", outvalArr)
     hv_val = hv.do(outvalArr)
     # print("Hypervolume", hv_val)
     return igd_val, hv_val, igdx_val
@@ -62,7 +62,8 @@ class Evaluator():
         # Always called with t
         global fevals
         fevals += 1
-        return (self.func(X) * self.vector)[1]
+        return np.sum(self.func(X) * self.vector)
+
 
 
 # simple binary tournament for a single-objective algorithm
@@ -118,7 +119,7 @@ def initialisePopulation(vectors, problem, pop_size=100):
     # elite archive
     E = [0] * (len(vectors))
     for i, vector in enumerate(vectors):
-        # print(X)
+        # print("i: ", i, " sample X ", X)
         solutions = [Solution(sol) for sol in X]
         pop = Population(solutions)
         P[i] = pop
@@ -159,6 +160,63 @@ def optimiseCluster(c, evaluator, Clusters, i, j):
     #     print("len of clusters = ", len(Clusters[i].clusters))
     #     print("len of archive = ", len(Clusters[i].archives))
 
+def getbest100(archives):
+    the_best = []
+
+    for i, a in enumerate(archives):
+        a_index = i
+        for j, sol in enumerate(a.archive):
+            sol_index = j
+            the_best.append(sol)
+            if (len(the_best) >= 100):
+                break
+        if (len(the_best) >= 100):
+            break
+
+    # print("lenth: ", len(the_best))
+    the_best = sorted(the_best, key=lambda x: x.f)
+    while a_index < len(archives):
+        a = archives[a_index].archive
+        while sol_index < len(a):
+            sol = a[sol_index]
+            if sol.f < the_best[-1].f:
+                the_best.pop(-1)
+                the_best.append(sol)
+                the_best = sorted(the_best, key=lambda x: x.f)
+            sol_index += 1
+        # print(len(the_best))
+        a_index += 1
+    # print("final length: ", len(the_best))
+    return the_best
+
+def plot_vector(solutions, problem, i, gen_zero=False):
+    X = np.asarray([s.param for s in solutions])
+    Y = problem.evaluate(X, return_values_of=["F"])
+    cluster = [s.cluster_number for s in solutions]
+    from matplotlib import cm, colors
+
+    norm = colors.Normalize(vmin=0.0, vmax=10.0, clip=False)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cm.Oranges)
+    # print(cluster)
+    colours = [mapper.to_rgba(c) for c in cluster]
+
+    pf = prob._calc_pareto_front(5000)
+    ps = prob._calc_pareto_set(5000)
+
+    fig = plt.figure(0)
+    fig.clear()
+    plt.scatter(ps[:, 0], ps[:, 1], marker="x", alpha=0.5)
+    plt.scatter(X[:, 0], X[:, 1], color="red")
+    # print("X = ", ps)
+    if gen_zero:
+        plt.title("Gen 0, Vector " + str(i))
+    else:
+        plt.title("after init_clusters Vector " + str(i))
+    plt.xlabel("$x_1$")
+    plt.ylabel("$x_2$")
+    plt.show()
+    plt.close(fig)
+
 
 def MOEADHVC(problem):
     np.random.seed(0)
@@ -166,11 +224,11 @@ def MOEADHVC(problem):
     vectors = get_reference_directions("das-dennis", problem.n_obj, n_partitions=12)
     # crossover = SimulatedBinaryCrossover(eta=20)
     # mutation = PolynomialMutation(prob=None, eta=20)
-
-    pop_size = 10
+    print(vectors)
+    pop_size = 100
     P, evaluators, E = initialisePopulation(vectors, problem, pop_size)
     # fevals += pop_size
-    termination = 500000
+    termination = 100000
     HVCS = []
     gen = 0
     for i, vector in enumerate(vectors):
@@ -182,13 +240,12 @@ def MOEADHVC(problem):
         print("gen", gen)
         gen += 1
         for i, hvc in enumerate(HVCS):
-            print("i= ", i)
             # print(HVCS[i].population.solutions)
             if len(HVCS[i].clusters) != len(HVCS[i].archives):
                 print("OPT1 len not equal")
                 print("OPT1 len of clusters = ", len(HVCS[i].clusters))
                 print("OPT1 len of archive = ", len(HVCS[i].archives))
-            pymoo = pymooPop.new()
+            # pymoo = pymooPop.new()
             S1 = binary_tournament(hvc.population.solutions, 5)
             S2 = binary_tournament(hvc.population.solutions, 5)
             S1 = np.asarray([s.param for s in S1])
@@ -200,16 +257,16 @@ def MOEADHVC(problem):
             # cross = crossover.do(problem, pymoo, S)
             new = mutation(S, problem.xu, problem.xl)
             new = Population([Solution(params=p) for p in new])
-            if len(HVCS[i].clusters) != len(HVCS[i].archives):
-                print("OPT2 len not equal")
-                print("OPT2 len of clusters = ", len(hvc.clusters))
-                print("OPT2 len of archive = ", len(hvc.archives))
+            # if len(HVCS[i].clusters) != len(HVCS[i].archives):
+            #     print("OPT2 len not equal")
+            #     print("OPT2 len of clusters = ", len(hvc.clusters))
+            #     print("OPT2 len of archive = ", len(hvc.archives))
             hvc.add_to_clusters(new)
 
-            if len(HVCS[i].clusters) != len(hvc.archives):
-                print("OPT3 len not equal")
-                print("OPT3 len of clusters = ", len(hvc.clusters))
-                print("OPT3 len of archive = ", len(hvc.archives))
+            # if len(HVCS[i].clusters) != len(hvc.archives):
+            #     print("OPT3 len not equal")
+            #     print("OPT3 len of clusters = ", len(hvc.clusters))
+            #     print("OPT3 len of archive = ", len(hvc.archives))
             for j, c in enumerate(hvc.clusters):
                 optimiseCluster(c, evaluators[i], HVCS, i, j)
 
@@ -249,11 +306,16 @@ def MOEADHVC(problem):
                 #     if sol.cluster_number == -1:
                 #         print(sol.cluster_number)
                 #         raise Exception("BAD CLUSTER NUMBER")
-
+        # print("length of vectors=  ", len(vectors))
+        # print("length of HVCS=     ", len(HVCS))
     final_pop = []
+    removed_count = 0
     for i, hvc in enumerate(HVCS):
-        for j, a in enumerate(hvc.archives):
-            final_pop = final_pop + a.archive
+        vector_pop = getbest100(hvc.archives)
+        # plot_vector(vector_pop, problem, i)
+        final_pop = final_pop + vector_pop
+
+    print("Final length [ALL] : ", len(final_pop))
     for sol in final_pop:
         if sol.cluster_number == -1:
             print(sol.cluster_number)
@@ -285,7 +347,8 @@ if __name__ == "__main__":
     # print(prob.n_obj)
     final_pop = MOEADHVC(prob)
     # print(final_pop)
-    print("Size: ", len(final_pop))
+    # print("Size: ", len(final_pop))
+    # print(final_pop)
     pf = prob._calc_pareto_front(5000)
     ps = prob._calc_pareto_set(5000)
     # Y = np.asarray([s.f for s in final_pop])
@@ -299,19 +362,31 @@ if __name__ == "__main__":
 
     from matplotlib import cm, colors
 
-    norm = colors.Normalize(vmin=0.0, vmax=20.0, clip=False)
+    norm = colors.Normalize(vmin=0.0, vmax=10.0, clip=False)
     mapper = cm.ScalarMappable(norm=norm, cmap=cm.Oranges)
-    print(cluster)
+    # print(cluster)
     colours = [mapper.to_rgba(c) for c in cluster]
-    Scatter(title="SYMPART decision", xlabel="$x_1$", ylabel="$x_2$").add(ps).add(X, color=colours).show()
+    # Scatter(title="SYMPART decision updated").axis_labels(xlabel="$x_1$", ylabel="$x_2$").add(ps).add(X, color=colours).show()
+    # print("X = ", X)
+    fig = plt.figure(0)
+    fig.clear()
+    plt.scatter(ps[:, 0], ps[:, 1], marker="x", alpha=0.5)
+    plt.scatter(X[:, 0], X[:, 1], color=colours)
+    # print("X = ", ps)
 
+    plt.title("SYMPART")
+    plt.xlabel("$x_1$")
+    plt.ylabel("$x_2$")
+    plt.show()
+    plt.close(fig)
     # Scatter(title="SYMPART Objective", xlabel="$f_1$", ylabel="$f_2$").add(pf).add(Y, color=colours).legend().show()
-    plt.scatter(pf[:, 0], pf[:, 1])
+    # plt.scatter(pf[:, 0], pf[:, 1])
     scater_val = plt.scatter(Y[:, 0], Y[:, 1], color=colours)
     print(scater_val)
     plt.legend()
     plt.title("SYMPART Objective")
     plt.xlabel("$f_1$")
+    plt.ylabel("$f_2$")
     plt.show()
     # for sol in final_pop:
     #     plt.scatter(sol.param, prob.evaluate(np.asarray([sol.param]), return_values_of=["F"]), color= mapper.to_rgba(sol.cluster_number), label=sol.cluster_number)
