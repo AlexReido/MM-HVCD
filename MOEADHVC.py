@@ -96,7 +96,7 @@ def mutation(S, prob_xu, prob_xl):
     np.random.seed(0)
     newS = np.zeros(S.shape)
     for i, s in enumerate(S):
-        newS[i] = np.random.normal(s, (0.05 * (prob_xu - prob_xl)))
+        newS[i] = np.random.normal(s, (0.1 * (prob_xu - prob_xl)))
         if np.any(np.less(newS[i], prob_xl)) or np.any(np.less(prob_xu, newS[i])):
             X = random.random()
             X *= (prob.xu - prob.xl)
@@ -226,6 +226,7 @@ def MOEADHVC(problem):
     # mutation = PolynomialMutation(prob=None, eta=20)
     print(vectors)
     pop_size = 100
+    generation_size = 10 # divisible by 2
     P, evaluators, E = initialisePopulation(vectors, problem, pop_size)
     # fevals += pop_size
     termination = 100000
@@ -241,18 +242,20 @@ def MOEADHVC(problem):
         gen += 1
         for i, hvc in enumerate(HVCS):
             # print(HVCS[i].population.solutions)
-            if len(HVCS[i].clusters) != len(HVCS[i].archives):
-                print("OPT1 len not equal")
-                print("OPT1 len of clusters = ", len(HVCS[i].clusters))
-                print("OPT1 len of archive = ", len(HVCS[i].archives))
+            # if len(HVCS[i].clusters) != len(HVCS[i].archives):
+            #     print("OPT1 len not equal")
+            #     print("OPT1 len of clusters = ", len(HVCS[i].clusters))
+            #     print("OPT1 len of archive = ", len(HVCS[i].archives))
             # pymoo = pymooPop.new()
-            S1 = binary_tournament(hvc.population.solutions, 5)
-            S2 = binary_tournament(hvc.population.solutions, 5)
-            S1 = np.asarray([s.param for s in S1])
-            S2 = np.asarray([s.param for s in S2])
+            S = binary_tournament(hvc.population.solutions, generation_size)
+            # S2 = binary_tournament(hvc.population.solutions, 5)
+            S = np.asarray([s.param for s in S])
+            # S2 = np.asarray([s.param for s in S2])
+            print(S[:int(generation_size/2)])
+            print(S[int(generation_size/2):])
             # print(S)
             # parents = np.random.permutation(S.size)[:crossover.n_parents]
-            S = crossover(S1, S2)
+            S = crossover(S[:int(generation_size/2)], S[int(generation_size/2):])
             # print("crossed", S)
             # cross = crossover.do(problem, pymoo, S)
             new = mutation(S, problem.xu, problem.xl)
