@@ -10,13 +10,13 @@ class Archive():
     def __init__(self, solutions, evaluator):
         self.archive = []
         for i, sol in enumerate(solutions):
-            elite = True
+            elite_flag = True
             for j, otherSol in enumerate(solutions[i:]):
                 #relation = self.getrelation(sol, otherSol)
                 if sol.f > otherSol.f:
-                    elite = False
+                    elite_flag = False
                     break
-            sol.elite = elite
+            sol.elite = elite_flag
 
         self.archive = [sol for sol in solutions if sol.elite]
 
@@ -27,18 +27,17 @@ class Archive():
         :return:
         """
         remove = []
-        insert = {}
-        elite = False
+        elite_flag = False
         for i, elite in enumerate(self.archive):
             if solution.f == elite.f:
-                elite = True
+                elite_flag = True
             elif solution.f < elite.f:
-                elite = True
+                elite_flag = True
                 remove.append(i)
 
-        if elite:
+        if elite_flag:
             self.archive.append(solution)
-        self.archive = [val for i, val in enumerate(self.archive) if not i in remove]
+        self.archive = [val for i, val in enumerate(self.archive) if i not in remove]
 
     def getrelation(self, this_sol: Solution, other_sol: Solution):
         """    This is used for non-dominated sorting and returns the dominance relation between objectives
