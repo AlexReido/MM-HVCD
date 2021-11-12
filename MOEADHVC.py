@@ -33,7 +33,7 @@ class IGDX(DistanceIndicator):
         super().__init__(pf, euclidean_distance, 1, **kwargs)
 
 
-def calculate_indicators(pf, ps, outvalArr, invalArr):
+def calculate_indicators(pf, ps, outvalArr, invalArr, reference_point):
     igd = get_performance_indicator("igd", pf)
     igd_val = igd.do(outvalArr)
     # print("IGD", igd_val)
@@ -41,7 +41,7 @@ def calculate_indicators(pf, ps, outvalArr, invalArr):
     igdx_val = igdx.do(invalArr)
     # print("IGDX", igdx_val)
     # outvalArr = outvalArr[:5]
-    hv = get_performance_indicator("hv", ref_point=np.array([10, 10]))
+    hv = get_performance_indicator("hv", ref_point=reference_point)
     # print("out vals ===", outvalArr)
     hv_val = hv.do(outvalArr)
     # print("Hypervolume", hv_val)
@@ -229,7 +229,7 @@ def MOEADHVC(problem):
     generation_size = 10 # divisible by 2
     P, evaluators, E = initialisePopulation(vectors, problem, pop_size)
     # fevals += pop_size
-    termination = 100000
+    termination = 10000
     HVCS = []
     gen = 0
     for i, vector in enumerate(vectors):
@@ -339,11 +339,15 @@ def MOEADHVC(problem):
 # local_optimizers[i].truncation_percentage()
 # #local_optimizers[i]->average_fitness_history.push_back(local_optimizers[i]->pop->average_fitness())
 
+import GetProblem
+
 if __name__ == "__main__":
     np.random.seed(0)
     global fevals
     fevals = 0
-    prob = SYMPART()
+    # "OmniTest"  "SYMPART"
+    problem_name = "OmniTest"
+    prob, reference_point = GetProblem.getProblem(problem_name)
     # print(prob.xl)
     # print(prob.xu)
     # print()
@@ -356,9 +360,10 @@ if __name__ == "__main__":
     ps = prob._calc_pareto_set(5000)
     # Y = np.asarray([s.f for s in final_pop])
     X = np.asarray([s.param for s in final_pop])
-    Y = prob.evaluate(X, return_values_of=["F"])
+    Y = prob.evaluate(X, return_values_of=["F"], reference_point=reference_point)
     cluster = [s.cluster_number for s in final_pop]
-    igd_val, hv_val, igdx_val = calculate_indicators(pf, ps, Y, X)
+
+    igd_val, hv_val, igdx_val = calculate_indicators(pf, ps, Y, X, reference_point)
     print("IGD", igd_val)
     print("IGDX", igdx_val)
     print("Hypervolume", hv_val)
