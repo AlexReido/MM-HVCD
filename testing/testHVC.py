@@ -63,7 +63,7 @@ def test_hvc(parameter_upper_limits, parameter_lower_limits):
         plt.scatter(x,f, cmap=plt.get_cmap("tab20"), label="Cluster: " +str(i))
 
     plt.title("Testing Hill Valley Clustering")
-    # plt.legend()
+    plt.legend()
     plt.xlabel("$x$")
     plt.ylabel("$f(x)$")
     plt.show()

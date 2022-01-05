@@ -1,5 +1,5 @@
 from pymoo.problems.multi.sympart import SYMPART, SYMPARTRotated
-from pymoo.model.problem import Problem
+from pymoo.core.problem import Problem
 from pymoo.factory import get_problem, anp
 
 
@@ -47,8 +47,8 @@ def hillvalleytest(problem, sol1: Solution, sol2: Solution, max_trials: int) -> 
     nevals = 0
     testvals = []
     # print(f)
-    val1 = sol1.F[f]
-    val2 = sol2.F[f]
+    val1 = sol1.F
+    val2 = sol2.F
     print(val1)
     print(val2)
     testvals = []

@@ -1,4 +1,6 @@
-from LocalOpt import LocalOptimizer
+import sys
+
+from LocalOpt import LocalOptimizer, getOptName
 import random
 import matplotlib.pyplot as plt
 import math
@@ -6,13 +8,17 @@ import numpy as np
 import HVC
 from Solution import Solution
 from Population import Population
-
+from HVC import HVC
+from scipy.optimize import Bounds
 
 def evaluate(x):
     """:returns this function creates a multi modal test problem"""
     # five is the standard
     NUMBER_OF_NICHES = 5
-    assert (x[0] >= 0) and (x[0] <= 1)
+    # assert (x[0] >= 0) and (x[0] <= 1), ("x = " + str(x[0]))
+    if (x[0] < 0) or (x[0] > 1):
+        print("x out of bounds ", str(x))
+        return sys.maxsize
     return 1.1 - math.exp(-2 * x[0]) * math.sin(NUMBER_OF_NICHES * x[0] * math.pi) ** 2
 
 def plotBasic():
@@ -54,7 +60,8 @@ def plotLocalPops(clusters):
 
     plt.show()
 
-def test_localOpt():
+def test_localOpt(index = 0, bounds = Bounds([0], [1])):
+    np.random.seed(0)
     plotBasic()
     sols = []
     for i in range(30):
@@ -62,13 +69,17 @@ def test_localOpt():
         s.f = evaluate(s.param)
         sols.append(s)
     pop = Population(sols)
-    clusters = HVC.hillvalleyclustering(pop, 1, evaluate, [1], [0])
-    for c in clusters:
-        local_opt = LocalOptimizer(Population(c), evaluate)
+    hvc = HVC(1, evaluate, [1], [0], [1])
+    hvc.init_clusters(pop)
+    # clusters = HVC.hillvalleyclustering(pop, 1, evaluate, [1], [0])
+    for c in hvc.clusters:
+        name = getOptName(index)
+        print("testing optimiser: ", name)
+        local_opt = LocalOptimizer(Population(c), evaluate, name, bounds)
         res = local_opt.run_opt()
         print(res)
         plt.scatter(res[0][0], res[1], cmap=plt.get_cmap("tab20"), label="Cluster: " + str(i))
-    plt.title("Testing the local optimiser")
+    plt.title(("Testing the local optimiser: " + name))
     # plt.legend()
     plt.xlabel("$x$")
     plt.ylabel("$f(x)$")
@@ -77,4 +88,6 @@ def test_localOpt():
 
 
 if __name__ == "__main__":
-    test_localOpt()
+    bounds = Bounds([0], [1])
+    for i in range(0, 6):
+        test_localOpt(i, bounds)
