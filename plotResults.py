@@ -4,6 +4,16 @@ from pymoo.core.problem import Problem
 from mpl_toolkits import mplot3d # for three d plots
 from pymoo.factory import get_visualization
 
+
+def plot_overtime(indicator_name, indicator_Y, evals,  title):
+    plt.plot(evals, indicator_Y)
+    plt.title(title)
+    plt.xlabel("Number of generations")
+    plt.ylabel(indicator_name)
+    plt.show()
+
+
+
 def plot_vector(solutions, problem, i, gen_zero=False):
     X = np.asarray([s.param for s in solutions])
     Y = problem.evaluate(X, return_values_of=["F"])
@@ -39,7 +49,7 @@ def plot_decision_space(three_dimension: bool, X, ps, colours, problem_name):
     plt.scatter(X[:, 0], X[:, 1], color=colours)
     # print("X = ", ps)
 
-    plt.title(problem_name + " Decision space")
+    plt.title("MOEADHVC - " + problem_name + " Decision space")
     plt.xlabel("$x_1$")
     plt.ylabel("$x_2$")
     plt.show()
@@ -63,9 +73,10 @@ def plot_objective_space(three_dimension: bool, Y, pf, colours, problem_name):
         plt.scatter(Y[:, 0], Y[:, 1], color=colours)
     # print(scater_val)
     # plt.legend()
-    # plt.title(problem_name + " Objective space")
-    # plt.xlabel("$f_1$")
-    # plt.ylabel("$f_2$")
+    plt.title("MOEADHVC - " + problem_name + " Objective space")
+    plt.xlabel("$f_1$")
+    plt.ylabel("$f_2$")
+
     plt.show()
     # for sol in final_pop:
     #     plt.scatter(sol.param, prob.evaluate(np.asarray([sol.param]), return_values_of=["F"]), color= mapper.to_rgba(sol.cluster_number), label=sol.cluster_number)
@@ -97,9 +108,9 @@ def standard_plots(problem: Problem, problem_name: str, X: np.array, Y: np.array
             get_visualization("scatter", angle=(45, 45)).add(Y).show()
         else:
             three_dim = False
-            get_visualization("scatter").add(Y).show()
+            # get_visualization("scatter").add(Y).show()
 
-            # plot_objective_space(three_dim, Y, pf, colours, problem_name)
+            plot_objective_space(three_dim, Y, pf, colours, problem_name)
     else:
         print("Too many variables to plot objective space; n_var = ", problem.n_obj)
 

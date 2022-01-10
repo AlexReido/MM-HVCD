@@ -20,19 +20,20 @@ def getProblem(problem_name):
         reference_point = np.array([10, 10])
         return OmniTest(), reference_point
     elif problem_name == "DTLZ1":
-        reference_point = np.array([10, 10])
+        reference_point = np.array([10, 10, 10])
         return get_problem("dtlz1"), reference_point
     elif problem_name == "DTLZ2":
-        reference_point = np.array([10, 10])
+        reference_point = np.array([10, 10, 10])
         return get_problem("dtlz2"), reference_point
     elif problem_name == "DTLZ2":
-        reference_point = np.array([10, 10])
+        reference_point = np.array([10, 10, 10])
         return get_problem("dtlz2"), reference_point
     elif problem_name == "DTLZ3":
-        reference_point = np.array([10, 10])
+        reference_point = np.array([10, 10, 10])
         return get_problem("dtlz3"), reference_point
     elif problem_name == "TwoOnOne2":
-        pass
+        reference_point = np.array([10, 10, 10])
+        return get_problem(""), reference_point
     elif problem_name == "SSUF":
         pass
 

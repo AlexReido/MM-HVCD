@@ -14,7 +14,7 @@ from pymoo.interface import sample
 import random
 # from pymoo.problems.multi.omnitest import OmniTest
 # import matplotlib
-
+import runStefGens
 from Population import Population
 import numpy as np
 from HVC import HVC
@@ -49,7 +49,7 @@ def calculate_indicators(pf, ps, outvalArr, invalArr, reference_point):
     # print("out vals ===", outvalArr)
     hv_val = hv.do(outvalArr)
     # print("Hypervolume", hv_val)
-    return igd_val, hv_val , igdx_val
+    return igd_val, hv_val, igdx_val
 
 
 class Evaluator():
@@ -68,7 +68,6 @@ class Evaluator():
         global fevals
         fevals += 1
         return np.sum(self.func(X) * self.vector)
-
 
 
 # simple binary tournament for a single-objective algorithm
@@ -120,7 +119,6 @@ def initialisePopulation(vectors, problem, pop_size=100):
     X = sample(sampling, pop_size, problem.n_var)
     X *= (problem.xu - problem.xl)
     X += problem.xl
-    y = problem.evaluate(X)
     P = [0] * (len(vectors))
     evals = [0] * (len(vectors))
     # elite archive
@@ -136,7 +134,9 @@ def initialisePopulation(vectors, problem, pop_size=100):
         E[i] = []
     return P, evals, E
 
+
 from scipy.optimize import Bounds
+
 
 def optimiseCluster(c, evaluator, Clusters, i, j, opt_name, bounds):
     """
@@ -168,9 +168,17 @@ def optimiseCluster(c, evaluator, Clusters, i, j, opt_name, bounds):
     #     print("len of clusters = ", len(Clusters[i].clusters))
     #     print("len of archive = ", len(Clusters[i].archives))
 
-def getbest100(archives):
-    the_best = []
 
+def getbest100(archives):
+    """
+    This funtion first populates a list with 100 solutions from the archives.
+    Next this list is sorted with the best solutions last in the list.
+    The remaining solutions in the archives are looped over and if better than
+    the current last solution they replace it before the list is resorted.
+    :param archives:
+    :return:
+    """
+    the_best = []
     for i, a in enumerate(archives):
         a_index = i
         for j, sol in enumerate(a.archive):
@@ -198,9 +206,7 @@ def getbest100(archives):
     return the_best
 
 
-
-
-def MOEADHVC(problem, opt_name, overtime: bool, random_seed:bool, reference_point):
+def MOEADHVC(problem, opt_name, overtime: bool, random_seed: bool, reference_point):
     if random_seed:
         np.random.seed(0)
     # Get weight vectors
@@ -210,14 +216,17 @@ def MOEADHVC(problem, opt_name, overtime: bool, random_seed:bool, reference_poin
     bounds = Bounds(problem.xl, problem.xu)
     # print(vectors)
     pop_size = 100
-    generation_size = 10 # divisible by 2
+    generation_size = 10  # divisible by 2
     P, evaluators, E = initialisePopulation(vectors, problem, pop_size)
     # fevals += pop_size
-    termination = 50000
+    termination = 60000
     HVCS = []
     gen = 0
     if overtime:
         overtime_results = []
+        pf = problem._calc_pareto_front(5000)
+        ps = problem._calc_pareto_set(5000)
+        global fevals
     for i, vector in enumerate(vectors):
         hvc = HVC(problem.n_var, evaluators[i], problem.xu, problem.xl, vector)
         hvc.init_clusters(P[i])
@@ -227,52 +236,16 @@ def MOEADHVC(problem, opt_name, overtime: bool, random_seed:bool, reference_poin
         # print("gen", gen)
         gen += 1
         for i, hvc in enumerate(HVCS):
-            # print(HVCS[i].population.solutions)
-            # if len(HVCS[i].clusters) != len(HVCS[i].archives):
-            #     print("OPT1 len not equal")
-            #     print("OPT1 len of clusters = ", len(HVCS[i].clusters))
-            #     print("OPT1 len of archive = ", len(HVCS[i].archives))
-            # pymoo = pymooPop.new()
             S = binary_tournament(hvc.population.solutions, generation_size, random_seed)
-            # S2 = binary_tournament(hvc.population.solutions, 5)
             S = np.asarray([s.param for s in S])
-            # S2 = np.asarray([s.param for s in S2])
-            # print(S[:int(generation_size/2)])
-            # print(S[int(generation_size/2):])
-            # print(S)
-            # parents = np.random.permutation(S.size)[:crossover.n_parents]
-            S = crossover(S[:int(generation_size/2)], S[int(generation_size/2):], random_seed)
-            # print("crossed", S)
-            # cross = crossover.do(problem, pymoo, S)
+            S = crossover(S[:int(generation_size / 2)], S[int(generation_size / 2):], random_seed)
             new = mutation(S, problem.xu, problem.xl, random_seed)
             new = Population([Solution(params=p) for p in new])
-            # if len(HVCS[i].clusters) != len(HVCS[i].archives):
-            #     print("OPT2 len not equal")
-            #     print("OPT2 len of clusters = ", len(hvc.clusters))
-            #     print("OPT2 len of archive = ", len(hvc.archives))
             hvc.add_to_clusters(new)
 
-            # if len(HVCS[i].clusters) != len(hvc.archives):
-            #     print("OPT3 len not equal")
-            #     print("OPT3 len of clusters = ", len(hvc.clusters))
-            #     print("OPT3 len of archive = ", len(hvc.archives))
             for j, c in enumerate(hvc.clusters):
                 optimiseCluster(c, evaluators[i], HVCS, i, j, opt_name, bounds)
 
-            # for sol in HVCS[i].population.solutions:
-            #     if sol.cluster_number == -1:
-            #         raise Exception("BAD CLUSTER NUMBER")
-
-        # debugging
-        # for i, vector in enumerate(vectors):
-        #     for j, a in enumerate(HVCS[i].archives):
-        #         for sol in a.archive:
-        #             print("main 1")
-        #             print(sol.cluster_number, end=" ")
-        #             if sol.cluster_number == -1:
-        #                 print(sol.cluster_number)
-        #                 raise Exception("BAD CLUSTER NUMBER")
-        # final_pop = []
 
         for i, hvc in enumerate(HVCS):
             for j, a in enumerate(hvc.archives):
@@ -284,14 +257,17 @@ def MOEADHVC(problem, opt_name, overtime: bool, random_seed:bool, reference_poin
                     # HVCS[i].archives.pop(j)  # [j] = None
                     pass
 
-
         if overtime:
-
-
-            overtime_results.append()
-                # else: # TODO overtime analysis
-
-
+            final_pop = []
+            removed_count = 0
+            for i, hvc in enumerate(HVCS):
+                vector_pop = getbest100(hvc.archives)
+                # plot_vector(vector_pop, problem, i)
+                final_pop = final_pop + vector_pop
+            igd_val, hv_val, igdx_val = interpret_results(problem, " ", final_pop, reference_point, False)
+            n_evals = fevals
+            overtime_results.append([igd_val, hv_val, igdx_val, n_evals])
+            # else: # TODO overtime analysis
 
     final_pop = []
     removed_count = 0
@@ -306,6 +282,8 @@ def MOEADHVC(problem, opt_name, overtime: bool, random_seed:bool, reference_poin
         if sol.cluster_number == -1:
             print(sol.cluster_number)
             raise Exception("BAD CLUSTER NUMBER")
+    if overtime:
+        return overtime_results, final_pop
     return final_pop
 
 
@@ -336,19 +314,20 @@ def interpret_results(problem, problem_name, population, reference_point, draw_g
     Y = problem.evaluate(X, return_values_of=["F"], reference_point=reference_point)
     cluster = [s.cluster_number for s in population]
 
-    igd_val, hv_val , igdx_val = calculate_indicators(pf, ps, Y, X, reference_point)  # , igdx_val
+    igd_val, hv_val, igdx_val = calculate_indicators(pf, ps, Y, X, reference_point)  # , igdx_val
 
     # print("IGD", igd_val)
     # # print("IGDX", igdx_val)
     # print("Hypervolume", hv_val)
     if draw_graph:
         plotResults.standard_plots(problem, problem_name, X, Y, ps, pf, cluster)
-    return igd_val, hv_val , igdx_val
+    return igd_val, hv_val, igdx_val
 
 
 from LocalOpt import LocalOptimizer, getOptName
 import GetProblem
 import plotResults
+
 
 def run_MOEADHVC(random_seed: bool, problems: list, local_opts: list, overtime: bool, graph: bool, repetitions: int):
     if random_seed:
@@ -362,7 +341,7 @@ def run_MOEADHVC(random_seed: bool, problems: list, local_opts: list, overtime: 
         prob, reference_point = GetProblem.getProblem(problem)
         for j, local_opt in enumerate(local_opts):
             # hv[i][1].append((local_opt))
-            print("Running MOEADHVC on the problem ", problem, " with the local opt ", local_opt)
+            print("Running MOEADHVC on the problem ", problem, " with the local opt ", local_opt, " to ", eval)
             # print("Number of variables: ", prob.n_var)
             # print("Number of objectives: ", prob.n_obj)
             hv_vals = []
@@ -375,15 +354,24 @@ def run_MOEADHVC(random_seed: bool, problems: list, local_opts: list, overtime: 
                 # print(prob.xu)
                 # print()
                 # print(prob.n_obj)
-                final_pop = MOEADHVC(prob, local_opt, overtime, random_seed, reference_point)
+                if overtime:
+                    overtime_res, final_pop = MOEADHVC(prob, local_opt, overtime, random_seed, reference_point)
+                    #  igd_val, hv_val , igdx_val
+                    overtime_res = np.asarray(overtime_res)
+                    title = "Overtime analysis on " + problem + " with " + local_opt + " using "
+                    plotResults.plot_overtime("Hyper Volume", overtime_res[:, 1], overtime_res[:, 3], (title + "Hyper Volume"))
+                    plotResults.plot_overtime("IGD", overtime_res[:, 0], overtime_res[:, 3], (title + "IGD"))
+                    plotResults.plot_overtime("IGDX", overtime_res[:, 2], overtime_res[:, 3], (title + "IGDX"))
+                else:
+                    final_pop = MOEADHVC(prob, local_opt, overtime, random_seed, reference_point)
                 igd, hv, igdx = interpret_results(prob, problem, final_pop, reference_point, graph)
                 hv_vals.append(hv)
                 igd_vals.append(igd)
                 igdx_vals.append(igdx)
 
-            ave = sum(igd_vals)/ len(igd_vals)
+            ave = sum(igd_vals) / len(igd_vals)
             igd_vals.sort()
-            median = igd_vals[int((repetitions-1)/2)]
+            median = igd_vals[int((repetitions - 1) / 2)]
             print("igd - Average== ", ave, " Median== ", median)
 
             ave = sum(hv_vals) / len(hv_vals)
@@ -400,14 +388,59 @@ def run_MOEADHVC(random_seed: bool, problems: list, local_opts: list, overtime: 
             print()
 
 
-
-
 if __name__ == "__main__":
-    opt_name = ["Nelder-Mead", "Powell", "L-BFGS-B", "TNC", "COBYLA", "SLSQP"]
+    opt_name = ["Nelder-Mead"]# , "Powell", "L-BFGS-B", "TNC", "COBYLA", "SLSQP"]
     # opt_name = [getOptName(0)]
-
+    global fevals
+    fevals = 0
     # "OmniTest"  "SYMPART"  "DTLZ1"
-    problems = ["SYMPART"]
+    problems = ["SYMPART", "OmniTest"]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        run_MOEADHVC(False, problems, opt_name, False, False, 31)
+        run_MOEADHVC(False, problems, opt_name, False, True, 1)
+
+    # problem_name = "SYMPART"
+    # problem, reference_point = GetProblem.getProblem(problem_name)
+    # number_of_runs = 31  # 31
+    #
+    # # runthebenchmark(problem_name, 20, number_of_runs)
+    # overtime_res, final_pop = MOEADHVC(problem, opt_name, True, True, reference_point)
+    # #  igd_val, hv_val , igdx_val
+    # overtime_res = np.asarray(overtime_res)
+    # moeadhvc_evals =  overtime_res[:, 3]
+    # moeadhvc_hv = overtime_res[:, 1]
+    # moeadhvc_IGD = overtime_res[:, 0]
+    # moeadhvc_IGDX = overtime_res[:, 2]
+    #
+    # title = "Overtime analysis on " + problem_name #+ " with " + local_opt + " using "
+    # # plotResults.plot_overtime("Hyper Volume", overtime_res[:, 1], overtime_res[:, 3], (title + "Hyper Volume"))
+    # # plotResults.plot_overtime("IGD", overtime_res[:, 0], overtime_res[:, 3], (title + "IGD"))
+    # # plotResults.plot_overtime("IGDX", overtime_res[:, 2], overtime_res[:, 3], (title + "IGDX"))
+    #
+    # #
+    # hv_reps, igd_reps, igdx_reps, evals = runStefGens.calculateresults(problem_name, number_of_runs, problem, reference_point, name_append="1", eval_limit=60000)
+    #
+    # plt.plot(evals, hv_reps, label="benchmark")
+    # plt.plot(moeadhvc_evals, moeadhvc_hv, label="moeadhvc")
+    # plt.title(title + "using hypervolume")
+    # plt.xlabel("Number of evaluations")
+    # plt.ylabel("Hyper volume")
+    # plt.legend()
+    # plt.show()
+    #
+    # plt.plot(evals, igd_reps, label="benchmark")
+    # plt.plot(moeadhvc_evals, moeadhvc_IGD, label="moeadhvc")
+    # plt.title(title + "using IGD")
+    # plt.xlabel("Number of evaluations")
+    # plt.ylabel("IGD")
+    # plt.legend()
+    # plt.show()
+    #
+    # plt.plot(evals, igdx_reps, label="benchmark")
+    # plt.plot(moeadhvc_evals, moeadhvc_IGDX, label="moeadhvc")
+    # plt.title(title + "using IGDX")
+    # plt.xlabel("Number of evaluations")
+    # plt.ylabel("IGDX")
+    # plt.legend()
+    # plt.show()
+

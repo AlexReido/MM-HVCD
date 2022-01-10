@@ -1,6 +1,5 @@
 # Nearest better clustering started writing by accident
 
-
 class Edge:
     def __init__(self, start, end, length):
         self.start = start

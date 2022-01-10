@@ -37,6 +37,7 @@ class Population():
         return mean/self.size
 
     def eval(self, evaluator):
+        # fvals = evaluator(s.param)
         for s in self.solutions:
             s.f = evaluator(s.param)
 
